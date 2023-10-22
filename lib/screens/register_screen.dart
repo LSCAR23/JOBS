@@ -152,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             phoneTextEditingController.text=text.completeNumber;
                           }),
                           ),
-                          
+                          SizedBox(height: 10,),
                           TextFormField(
                           inputFormatters: [LengthLimitingTextInputFormatter(100)],
                           decoration: InputDecoration(
@@ -177,7 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return 'Address can not be empty';
                             }
                             if(text.length<2 || text.length>99){
-                              return 'Address enter a valid name';
+                              return 'Please enter a valid address';
                             }
                           },
                           onChanged: (text)=>setState(() {
@@ -221,7 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return 'Password can not be empty';
                             }
                             if(text.length<6 || text.length>49){
-                              return 'Password enter a valid name';
+                              return 'Please enter a valid password';
                             }
                             return null;
                           },
@@ -229,6 +229,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             passwordTextEditingController.text=text;
                           }),
                           ),
+
+                          SizedBox(height: 20,),
+
+                          TextFormField(
+                          obscureText: !_passwordVisible,
+                          inputFormatters: [LengthLimitingTextInputFormatter(50)],
+                          decoration: InputDecoration(
+                            hintText: "Confirm Password",
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                            ),
+                            filled: true,
+                            fillColor: darkTheme? Colors.black45:Colors.grey.shade200,
+                            border: OutlineInputBorder(
+                              borderRadius:BorderRadius.circular(40),
+                              borderSide: BorderSide(
+                                width: 0,
+                                style: BorderStyle.none
+                              )
+                            ),
+                          prefixIcon: Icon(Icons.person,color:darkTheme?Colors.amber.shade400:Colors.grey),  
+                          suffixIcon: IconButton(
+                            icon: Icon(_passwordVisible?Icons.visibility:Icons.visibility_off,
+                            color: darkTheme?Colors.amber.shade400:Colors.grey,
+                            ),
+                            onPressed:(){
+                              setState(() {
+                                _passwordVisible=!_passwordVisible;
+                              });
+                            } ,
+                            )
+                          ),
+                          autovalidateMode:AutovalidateMode.onUserInteraction,
+                          validator: (text){
+                            if(text==null || text.isEmpty){
+                              return 'Confirm Password can not be empty';
+                            }
+                            if(text!=passwordTextEditingController.text){
+                              return 'Password does not match';
+                            }
+                            if(text.length<6 || text.length>49){
+                              return 'Please enter a valid Password';
+                            }
+                            return null;
+                          },
+                          onChanged: (text)=>setState(() {
+                            confirmTextEditingController.text=text;
+                          }),
+                          ),
+                          SizedBox(height:20 ,),
+                          ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            primary: darkTheme? Colors.amber.shade400:Colors.blue,
+                            onPrimary: darkTheme? Colors.black:Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(32)
+                            ),
+                            minimumSize: Size(double.infinity, 50)
+                          ),
+                          onPressed:(){
+
+                          }, 
+                          child: Text(
+                            'Register',
+                            style:TextStyle(
+                              fontSize: 20,
+                            )
+                          )
+                          ),
+                          SizedBox(height: 20,),
+                          GestureDetector(
+                            onTap: (){},
+                            child: Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: darkTheme? Colors.amber.shade400:Colors.blue,
+                              ),
+                            ),
+                          )
                         ],
                       )
                     ),]
