@@ -151,7 +151,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onChanged: (text)=>setState(() {
                             phoneTextEditingController.text=text.completeNumber;
                           }),
-                          )
+                          ),
+                          
+                          TextFormField(
+                          inputFormatters: [LengthLimitingTextInputFormatter(100)],
+                          decoration: InputDecoration(
+                            hintText: "Address",
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                            ),
+                            filled: true,
+                            fillColor: darkTheme? Colors.black45:Colors.grey.shade200,
+                            border: OutlineInputBorder(
+                              borderRadius:BorderRadius.circular(40),
+                              borderSide: BorderSide(
+                                width: 0,
+                                style: BorderStyle.none
+                              )
+                            ),
+                          prefixIcon: Icon(Icons.person,color:darkTheme?Colors.amber.shade400:Colors.grey)  
+                          ),
+                          autovalidateMode:AutovalidateMode.onUserInteraction,
+                          validator: (text){
+                            if(text==null || text.isEmpty){
+                              return 'Address can not be empty';
+                            }
+                            if(text.length<2 || text.length>99){
+                              return 'Address enter a valid name';
+                            }
+                          },
+                          onChanged: (text)=>setState(() {
+                            addressTextEditingController.text=text;
+                          }),
+                          ),
+                          SizedBox(height: 20,),
+
+                          TextFormField(
+                          obscureText: !_passwordVisible,
+                          inputFormatters: [LengthLimitingTextInputFormatter(50)],
+                          decoration: InputDecoration(
+                            hintText: "Password",
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                            ),
+                            filled: true,
+                            fillColor: darkTheme? Colors.black45:Colors.grey.shade200,
+                            border: OutlineInputBorder(
+                              borderRadius:BorderRadius.circular(40),
+                              borderSide: BorderSide(
+                                width: 0,
+                                style: BorderStyle.none
+                              )
+                            ),
+                          prefixIcon: Icon(Icons.person,color:darkTheme?Colors.amber.shade400:Colors.grey),  
+                          suffixIcon: IconButton(
+                            icon: Icon(_passwordVisible?Icons.visibility:Icons.visibility_off,
+                            color: darkTheme?Colors.amber.shade400:Colors.grey,
+                            ),
+                            onPressed:(){
+                              setState(() {
+                                _passwordVisible=!_passwordVisible;
+                              });
+                            } ,
+                            )
+                          ),
+                          autovalidateMode:AutovalidateMode.onUserInteraction,
+                          validator: (text){
+                            if(text==null || text.isEmpty){
+                              return 'Password can not be empty';
+                            }
+                            if(text.length<6 || text.length>49){
+                              return 'Password enter a valid name';
+                            }
+                            return null;
+                          },
+                          onChanged: (text)=>setState(() {
+                            passwordTextEditingController.text=text;
+                          }),
+                          ),
                         ],
                       )
                     ),]
