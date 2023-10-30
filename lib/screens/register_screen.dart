@@ -308,6 +308,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 color: darkTheme? Colors.amber.shade400:Colors.blue,
                               ),
                             ),
+                          ),
+
+                          SizedBox(height: 20,),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Have an account?',
+                              style: TextStyle(
+                                color:Colors.grey,
+                                fontSize: 15,
+                              ),)
+                            ],
+                          ),
+                          SizedBox(height: 5,),
+                          GestureDetector(
+                            onTap: (){
+
+                            },
+                            child: Text('Sign In',
+                            style:TextStyle(
+                              fontSize: 15,
+                              color: darkTheme? Colors.amber.shade400:Colors.blue,
+                            )),
                           )
                         ],
                       )
