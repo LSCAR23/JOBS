@@ -1,7 +1,11 @@
 import 'package:email_validator/email_validator.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:jobs/global/global.dart';
+import 'package:jobs/screens/main_page.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +25,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _passwordVisible = false;
 
   final _fromKey = GlobalKey<FormState>();
+
+  void _submit() async{
+    if(_fromKey.currentState!.validate()){
+      await firebaseAuth.createUserWithEmailAndPassword(email: emailTextEditingController.text.trim(), 
+      password: passwordTextEditingController.text.trim()).then((auth)async{
+        currentUser=auth.user;
+
+        if(currentUser != null){
+          Map userMap={
+            'id':currentUser!.uid,
+            'name':nameTextEditingController.text.trim(),
+            'email':emailTextEditingController.text.trim(),
+            'address':addressTextEditingController.text.trim(),
+            'phone':phoneTextEditingController.text.trim()
+          };
+
+          DatabaseReference userRef= FirebaseDatabase.instance.ref().child('users');
+          userRef.child(currentUser!.uid).set(userMap);
+        }
+        await Fluttertoast.showToast(msg: 'Succcesfully Registered!');
+        Navigator.push(context, MaterialPageRoute(builder: (c)=>MainScreen()));
+      }).catchError((errorMessage){
+        Fluttertoast.showToast(msg:'Error occured: \n $errorMessage');
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [Form(
+                    key: _fromKey,
                     child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -290,7 +321,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             minimumSize: Size(double.infinity, 50)
                           ),
                           onPressed:(){
-
+                            _submit();
                           }, 
                           child: Text(
                             'Register',
