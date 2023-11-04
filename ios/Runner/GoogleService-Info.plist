@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>89445901154-on4o5l9cd70a57vnbgacle2ee2n0991j.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.89445901154-on4o5l9cd70a57vnbgacle2ee2n0991j</string>
+	<key>API_KEY</key>
+	<string>AIzaSyA2GuGSQdJldxF9idy3BPnwCw6TNilTdlI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>89445901154</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.jobs</string>
+	<key>PROJECT_ID</key>
+	<string>jobs-398815</string>
+	<key>STORAGE_BUCKET</key>
+	<string>jobs-398815.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:89445901154:ios:4d39b55a5d8b3ab080023b</string>
+	<key>DATABASE_URL</key>
+	<string>https://jobs-398815-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>

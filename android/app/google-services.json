@@ -1,20 +1,21 @@
 {
   "project_info": {
     "project_number": "89445901154",
+    "firebase_url": "https://jobs-398815-default-rtdb.firebaseio.com",
     "project_id": "jobs-398815",
     "storage_bucket": "jobs-398815.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:89445901154:android:5c98468f4a01e56980023b",
+        "mobilesdk_app_id": "1:89445901154:android:617c742dec78561c80023b",
         "android_client_info": {
           "package_name": "com.example.jobs"
         }
       },
       "oauth_client": [
         {
-          "client_id": "89445901154-6g9o0g8qbgvrtocsij81j5tpmafdn276.apps.googleusercontent.com",
+          "client_id": "89445901154-pr0vp0fa2vn8pqcc1g69aa2ev46m452b.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
