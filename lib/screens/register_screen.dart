@@ -27,7 +27,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _fromKey = GlobalKey<FormState>();
 
-  void _submit() async {
+
+  void _submit2() async {
+    if(_fromKey.currentState!.validate()){
+      await firebaseAuth.createUserWithEmailAndPassword(email: emailTextEditingController.text.trim(), 
+      password: passwordTextEditingController.text.trim()
+      ).then((auth) async{
+        currentUser=auth.user;
+
+        if(currentUser!=null){
+          Map userMap2={
+            "id": currentUser!.uid,
+            "name": nameTextEditingController.text.trim(),
+            "email": emailTextEditingController.text.trim(),
+            "address": addressTextEditingController.text.trim(),
+            "phone": phoneTextEditingController.text.trim()
+
+          };
+          DatabaseReference userRef= FirebaseDatabase.instance.ref().child("users");
+          userRef.child(currentUser!.uid).set(userMap2);
+        }
+        await Fluttertoast.showToast(msg: "Succesfully Registered");
+        Navigator.push(context, MaterialPageRoute(builder: (c)=> MainScreen()));
+      }).catchError((errorMessage){
+        Fluttertoast.showToast(msg: "Error occured: \n $errorMessage");
+      });
+    }else{
+      Fluttertoast.showToast(msg: "Not all field are valid");
+    }
+  }
+
+
+ /* void _submit() async {
     if (_fromKey.currentState!.validate()) {
       var userMap = {
         'name': nameTextEditingController.text.trim(),
@@ -45,7 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Fluttertoast.showToast(msg: "Not all fields are valid.");
     }
   }
-
+*/
   @override
   Widget build(BuildContext context) {
     bool darkTheme =
@@ -369,7 +400,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 BorderRadius.circular(32)),
                                         minimumSize: Size(double.infinity, 50)),
                                     onPressed: () {
-                                      _submit();
+                                      _submit2();
                                     },
                                     child: Text('Register',
                                         style: TextStyle(
