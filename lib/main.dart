@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:jobs/screens/login_screen.dart';
-import 'package:jobs/screens/main_page.dart';
+import 'package:jobs/screens/main_screen.dart';
 import 'package:jobs/screens/register_screen.dart';
 import 'package:jobs/splash_screen/splash_screen.dart';
 import 'package:jobs/themeProvider/theme_provider.dart';

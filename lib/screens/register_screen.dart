@@ -6,7 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:jobs/firebase_services.dart';
 import 'package:jobs/global/global.dart';
-import 'package:jobs/screens/main_page.dart';
+import 'package:jobs/screens/main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:jobs/Assistants/assistants_methods.dart';
 import 'package:jobs/global/global.dart';
 import 'package:jobs/screens/login_screen.dart';
-import 'package:jobs/screens/main_page.dart';
+import 'package:jobs/screens/main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
