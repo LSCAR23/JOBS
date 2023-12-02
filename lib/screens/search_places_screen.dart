@@ -47,7 +47,7 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
       child: Scaffold(
         backgroundColor: darkTheme? Colors.black: Colors.white,
         appBar: AppBar(
-          backgroundColor: darkTheme? Colors.black: Colors.white,
+          backgroundColor: darkTheme? Colors.black: Colors.blue,
           leading: GestureDetector(
             onTap: () {
               Navigator.pop(context);
@@ -56,7 +56,7 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
           ),
           title: Text(
             "Search & Set drop off location",
-            style:TextStyle(color: darkTheme? Colors.black: Colors.white),
+            style:TextStyle(color: darkTheme? Colors.black: Colors.white, fontSize: 17),
           ),
           elevation: 0.0,
         ),
