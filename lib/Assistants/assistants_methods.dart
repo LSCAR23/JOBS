@@ -2,10 +2,12 @@ import 'dart:developer';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:jobs/Assistants/request_assistant.dart';
 import 'package:jobs/global/global.dart';
 import 'package:jobs/global/map_key.dart';
 import 'package:jobs/infoHandler/app_info.dart';
+import 'package:jobs/models/direction_details_info.dart';
 import 'package:jobs/models/directions.dart';
 import 'package:jobs/models/user_model.dart';
 import 'package:provider/provider.dart';
@@ -40,4 +42,19 @@ class AssistandMethods {
         }
         return humanReadableAddress;
       }
+  
+  static Future <DirectionsDetailsInfo> obtainOriginToDestinationDirectionDetails(LatLng originPosition, LatLng destinationPosition) async{
+   String urlOriginToDestinationDirectionDetails= "https://maps.googleapis.com/maps/api/directions/json?origin=${originPosition.latitude},${originPosition.longitude}&destination=${destinationPosition.latitude},${destinationPosition.longitude}&key=$mapKey";
+  var responseDirectionApi = await RequestAssistant.receiveRequest(urlOriginToDestinationDirectionDetails);
+
+  DirectionsDetailsInfo directionsDetailsInfo= DirectionsDetailsInfo();
+  directionsDetailsInfo.e_points = responseDirectionApi["routes"][0]["overview_polyline"]["points"];
+
+  directionsDetailsInfo.distance_text= responseDirectionApi["routes"][0]["legs"][0]["distance"]["text"];
+  directionsDetailsInfo.distance_value= responseDirectionApi["routes"][0]["legs"][0]["distance"]["value"];
+  directionsDetailsInfo.duration_text= responseDirectionApi["routes"][0]["legs"][0]["duration"]["text"];
+  directionsDetailsInfo.duration_value= responseDirectionApi["routes"][0]["legs"][0]["duration"]["value"];
+
+  return directionsDetailsInfo;
+  }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 //import 'dart:html';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoder2/geocoder2.dart';
 import 'package:http/http.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:jobs/global/map_key.dart';
 import 'package:jobs/infoHandler/app_info.dart';
 import 'package:jobs/models/directions.dart';
 import 'package:jobs/screens/search_places_screen.dart';
+import 'package:jobs/widgets/progress_dialog.dart';
 import 'package:location/location.dart' as loc;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -82,6 +84,127 @@ class _MainScreenState extends State<MainScreen> {
     //AssistandMethods.readTripsKeyForOnineUser(context);
   }
 
+  Future<void> drawPolyLineFromOriginToDestination(bool darkTheme) async {
+    var originPosition =
+        Provider.of<AppInfo>(context, listen: false).userPickUpLocation;
+    var destinationPosition =
+        Provider.of<AppInfo>(context, listen: false).userDropOffLocation;
+
+    var originLatLng = LatLng(
+        originPosition!.locationLatitude!, originPosition.locationLongitude!);
+    var destinationLatLng = LatLng(destinationPosition!.locationLatitude!,
+        destinationPosition.locationLongitude!);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => ProgressDialog(
+        message: "Please wait",
+      ),
+    );
+    var directionsDetailsInfo =
+        await AssistandMethods.obtainOriginToDestinationDirectionDetails(
+            originLatLng, destinationLatLng);
+    setState(() {
+      tripDirectionsDetailsInfo = directionsDetailsInfo;
+    });
+
+    Navigator.pop(context);
+
+    PolylinePoints pPoints = PolylinePoints();
+    List<PointLatLng> decodePolyLinePointsResultList =
+        pPoints.decodePolyline(directionsDetailsInfo.e_points!);
+    pLineCoordidatedList.clear();
+
+    if (decodePolyLinePointsResultList.isNotEmpty) {
+      decodePolyLinePointsResultList.forEach((PointLatLng pointLatLng) {
+        pLineCoordidatedList
+            .add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
+      });
+    }
+
+    polylineSet.clear();
+    setState(() {
+      Polyline polyline = Polyline(
+        color: darkTheme ? Colors.amberAccent : Colors.blue,
+        polylineId: PolylineId("PolylineID"),
+        jointType: JointType.round,
+        points: pLineCoordidatedList,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+        geodesic: true,
+        width: 5,
+      );
+      polylineSet.add(polyline);
+    });
+
+    LatLngBounds boundsLatLng;
+    if (originLatLng.latitude > destinationLatLng.latitude &&
+        originLatLng.longitude > destinationLatLng.longitude) {
+      boundsLatLng =
+          LatLngBounds(southwest: destinationLatLng, northeast: originLatLng);
+    } else if (originLatLng.longitude > destinationLatLng.longitude) {
+      boundsLatLng = LatLngBounds(
+          southwest: LatLng(originLatLng.latitude, destinationLatLng.longitude),
+          northeast:
+              LatLng(destinationLatLng.latitude, originLatLng.longitude));
+    } else if (originLatLng.latitude > destinationLatLng.latitude) {
+      boundsLatLng = LatLngBounds(
+        southwest: LatLng(destinationLatLng.latitude, originLatLng.longitude),
+        northeast: LatLng(originLatLng.latitude, destinationLatLng.longitude),
+      );
+    } else {
+      boundsLatLng =
+          LatLngBounds(southwest: originLatLng, northeast: destinationLatLng);
+    }
+
+    newGoogleMapController!
+        .animateCamera(CameraUpdate.newLatLngBounds(boundsLatLng, 65));
+
+    Marker origenMarker = Marker(
+      markerId: MarkerId("origenID"),
+      infoWindow:
+          InfoWindow(title: originPosition.locationName, snippet: "Origin"),
+      position: originLatLng,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+    );
+
+    Marker destinationMarker = Marker(
+      markerId: MarkerId("destinationID"),
+      infoWindow: InfoWindow(
+          title: destinationPosition.locationName, snippet: "Destination"),
+      position: destinationLatLng,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+    );
+
+    setState(() {
+      markersSet.add(origenMarker);
+      markersSet.add(destinationMarker);
+    });
+
+    Circle origenCircle = Circle(
+      circleId: CircleId("origenID"),
+      fillColor: Colors.green,
+      radius: 12,
+      strokeWidth: 3,
+      strokeColor: Colors.white,
+      center: originLatLng,
+    );
+
+    Circle destinationCircle = Circle(
+      circleId: CircleId("destinationID"),
+      fillColor: Colors.red,
+      radius: 12,
+      strokeWidth: 3,
+      strokeColor: Colors.white,
+      center: destinationLatLng,
+    );
+
+    setState(() {
+      circlesSet.add(origenCircle);
+      circlesSet.add(destinationCircle);
+    });
+  }
+
   getAddressFromLatLng() async {
     try {
       GeoData data = await Geocoder2.getDataFromCoordinates(
@@ -130,7 +253,7 @@ class _MainScreenState extends State<MainScreen> {
         body: Stack(
           children: [
             GoogleMap(
-              padding: EdgeInsets.only(top:30,bottom: bottomPaddingofMap),
+              padding: EdgeInsets.only(top: 50, bottom: (bottomPaddingofMap+150)),
               mapType: MapType.normal,
               myLocationEnabled: true,
               zoomGesturesEnabled: true,
@@ -216,78 +339,98 @@ class _MainScreenState extends State<MainScreen> {
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                             )),
-                                        Text(Provider.of<AppInfo>(context)
-                                                    .userPickUpLocation !=
-                                                null
-                                            ? (Provider.of<AppInfo>(context)
-                                                        .userPickUpLocation!
-                                                        .locationName!)
-                                                    .substring(0, 24) +
-                                                "..."
-                                            : "Not Getting Address",
-                                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                                            )
+                                        Text(
+                                          Provider.of<AppInfo>(context)
+                                                      .userPickUpLocation !=
+                                                  null
+                                              ? (Provider.of<AppInfo>(context)
+                                                          .userPickUpLocation!
+                                                          .locationName!)
+                                                      .substring(0, 24) +
+                                                  "..."
+                                              : "Not Getting Address",
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 14),
+                                        )
                                       ],
                                     )
                                   ],
                                 ),
                               ),
-                              SizedBox(height: 5,),
+                              SizedBox(
+                                height: 5,
+                              ),
                               Divider(
                                 height: 1,
                                 thickness: 2,
-                                color: darkTheme ? Colors.amber.shade400: Colors.blue,
+                                color: darkTheme
+                                    ? Colors.amber.shade400
+                                    : Colors.blue,
                               ),
-                              SizedBox(height: 5,),
+                              SizedBox(
+                                height: 5,
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(5),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    var responseFromSearchScreen =
+                                        await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (c) =>
+                                                    SearchPlacesScreen()));
 
-                              Padding(padding: EdgeInsets.all(5),
-                              child: GestureDetector(
-                                onTap:()async{
-                                  var responseFromSearchScreen= await Navigator.push(context, MaterialPageRoute(builder: (c)=>SearchPlacesScreen()));
+                                    if (responseFromSearchScreen ==
+                                        "obtainedDropoff") {
+                                      setState(() {
+                                        openNavigationDrawer = false;
+                                      });
+                                    }
 
-                                  if(responseFromSearchScreen== "obtainedDropoff"){
-                                    setState(() {
-                                      openNavigationDrawer= false;
-                                    });
-                                  }
-                                },
-                                child:  Row(
-                                  children: [
-                                    Icon(
-                                      Icons.location_on_outlined,
-                                      color: darkTheme
-                                          ? Colors.amber.shade400
-                                          : Colors.blue,
-                                    ),
-                                    SizedBox(
-                                      width: 10,
-                                    ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text("To",
+                                    await drawPolyLineFromOriginToDestination(
+                                        darkTheme);
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.location_on_outlined,
+                                        color: darkTheme
+                                            ? Colors.amber.shade400
+                                            : Colors.blue,
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text("To",
+                                              style: TextStyle(
+                                                color: darkTheme
+                                                    ? Colors.amber.shade400
+                                                    : Colors.blue,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              )),
+                                          Text(
+                                            Provider.of<AppInfo>(context)
+                                                        .userDropOffLocation !=
+                                                    null
+                                                ? Provider.of<AppInfo>(context)
+                                                    .userDropOffLocation!
+                                                    .locationName!
+                                                : "Where to",
                                             style: TextStyle(
-                                              color: darkTheme
-                                                  ? Colors.amber.shade400
-                                                  : Colors.blue,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            )),
-                                        Text(Provider.of<AppInfo>(context)
-                                                    .userDropOffLocation!=
-                                                null
-                                            ? Provider.of<AppInfo>(context)
-                                                        .userDropOffLocation!
-                                                        .locationName!
-                                                    : "Where to",
-                                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                                            )
-                                      ],
-                                    )
-                                  ],
+                                                color: Colors.grey,
+                                                fontSize: 14),
+                                          )
+                                        ],
+                                      )
+                                    ],
+                                  ),
                                 ),
-                              ),
                               )
                             ],
                           ),
