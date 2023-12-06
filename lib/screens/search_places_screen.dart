@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:jobs/Assistants/request_assistant.dart';
+import 'package:jobs/global/global.dart';
 import 'package:jobs/global/map_key.dart';
 import 'package:jobs/models/predicted_places.dart';
 import 'package:jobs/widgets/place_prediction_tile.dart';
@@ -38,8 +39,8 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool darkTheme= MediaQuery.of(context).platformBrightness== Brightness.dark;
-
+    bool darkTheme = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    //bool darkTheme= true;
     return GestureDetector(
       onTap: (){
         FocusScope.of(context).unfocus();
