@@ -10,6 +10,7 @@ import 'package:jobs/global/global.dart';
 import 'package:jobs/global/map_key.dart';
 import 'package:jobs/infoHandler/app_info.dart';
 import 'package:jobs/models/directions.dart';
+import 'package:jobs/screens/precise_pickup_location.dart';
 import 'package:jobs/screens/search_places_screen.dart';
 import 'package:jobs/widgets/progress_dialog.dart';
 import 'package:location/location.dart' as loc;
@@ -205,7 +206,7 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  getAddressFromLatLng() async {
+  /*getAddressFromLatLng() async {
     try {
       GeoData data = await Geocoder2.getDataFromCoordinates(
           latitude: pickLocation!.latitude,
@@ -225,7 +226,7 @@ class _MainScreenState extends State<MainScreen> {
     } catch (e) {
       print(e);
     }
-  }
+  }*/
 
   checkIfLocationPermissionAllowed() async {
     _locationPermission = await Geolocator.requestPermission();
@@ -253,7 +254,8 @@ class _MainScreenState extends State<MainScreen> {
         body: Stack(
           children: [
             GoogleMap(
-              padding: EdgeInsets.only(top: 50, bottom: (bottomPaddingofMap+150)),
+              padding:
+                  EdgeInsets.only(top: 40, bottom: (bottomPaddingofMap)),
               mapType: MapType.normal,
               myLocationEnabled: true,
               zoomGesturesEnabled: true,
@@ -265,10 +267,12 @@ class _MainScreenState extends State<MainScreen> {
               onMapCreated: (GoogleMapController controller) {
                 _controllerGoogleMap.complete(controller);
                 newGoogleMapController = controller;
-                setState(() {});
+                setState(() {
+                  bottomPaddingofMap=200;
+                });
                 locateUserPosition();
               },
-              onCameraMove: (CameraPosition? position) {
+              /*onCameraMove: (CameraPosition? position) {
                 if (pickLocation != position!.target) {
                   setState(() {
                     pickLocation = position.target;
@@ -277,8 +281,9 @@ class _MainScreenState extends State<MainScreen> {
               },
               onCameraIdle: () {
                 getAddressFromLatLng();
-              },
+              },*/
             ),
+            /*
             Align(
               alignment: Alignment.center,
               child: Padding(
@@ -289,7 +294,7 @@ class _MainScreenState extends State<MainScreen> {
                   width: 45,
                 ),
               ),
-            ),
+            ),*/
             Positioned(
               bottom: 0,
               left: 0,
@@ -434,6 +439,52 @@ class _MainScreenState extends State<MainScreen> {
                               )
                             ],
                           ),
+                        ),
+                        SizedBox(
+                          height: 5,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (c)=>PrecisePickUpScreen()));
+                              },
+                              child: Text(
+                                "Change Pick Up",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                  primary: Colors.blue,
+                                  textStyle: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  )),
+                            ),
+                            SizedBox(width: 10,),
+                            ElevatedButton(
+                              onPressed: (){
+
+                              },
+                              child: Text(
+                                "Request a ride",
+                                style: TextStyle(
+                                  color: Colors.white,
+
+                                ),
+
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                primary: Colors.blue,
+                                textStyle: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                )
+                              ),
+                              )
+                          ],
                         )
                       ]),
                     )
