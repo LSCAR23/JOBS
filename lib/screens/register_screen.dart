@@ -52,7 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
         await Fluttertoast.showToast(msg: "Succesfully Registered");
         Navigator.push(
-            context, MaterialPageRoute(builder: (c) => MainScreen()));
+            context, MaterialPageRoute(builder: (c) => LoginScreen()));
       }).catchError((errorMessage) {
         Fluttertoast.showToast(msg: "Error occured: \n $errorMessage");
       });

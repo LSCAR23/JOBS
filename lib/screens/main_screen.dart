@@ -10,6 +10,7 @@ import 'package:jobs/global/global.dart';
 import 'package:jobs/global/map_key.dart';
 import 'package:jobs/infoHandler/app_info.dart';
 import 'package:jobs/models/directions.dart';
+import 'package:jobs/screens/drawer_screen.dart';
 import 'package:jobs/screens/precise_pickup_location.dart';
 import 'package:jobs/screens/search_places_screen.dart';
 import 'package:jobs/widgets/progress_dialog.dart';
@@ -251,6 +252,8 @@ class _MainScreenState extends State<MainScreen> {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
+        key: _scaffoldState,
+        drawer: DrawerScreen(),
         body: Stack(
           children: [
             GoogleMap(
@@ -295,6 +298,28 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),*/
+
+            Positioned(
+              top: 50,
+              left:20,
+              child: Container(
+                child: GestureDetector(
+                  onTap: (){
+                    _scaffoldState.currentState!.openDrawer();
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.menu,
+                      color: Colors.lightBlue,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+
+
             Positioned(
               bottom: 0,
               left: 0,

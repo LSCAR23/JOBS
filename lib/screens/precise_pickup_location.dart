@@ -75,7 +75,7 @@ class _PrecisePickUpScreenState extends State<PrecisePickUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return  Scaffold(
       body: Stack(
         children: [
           GoogleMap(
