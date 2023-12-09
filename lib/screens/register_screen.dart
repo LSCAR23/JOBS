@@ -82,8 +82,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 */
   @override
   Widget build(BuildContext context) {
-    //bool darkTheme = MediaQuery.of(context).platformBrightness == Brightness.dark;
-    bool darkTheme= true;
+    bool darkTheme = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    //bool darkTheme= false;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
