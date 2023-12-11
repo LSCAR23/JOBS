@@ -1,14 +1,17 @@
 import 'dart:async';
 //import 'dart:html';
+import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoder2/geocoder2.dart';
 import 'package:http/http.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:jobs/Assistants/assistants_methods.dart';
+import 'package:jobs/Assistants/geofire_assistant.dart';
 import 'package:jobs/global/global.dart';
 import 'package:jobs/global/map_key.dart';
 import 'package:jobs/infoHandler/app_info.dart';
+import 'package:jobs/models/active_nearby_available_workers.dart';
 import 'package:jobs/models/directions.dart';
 import 'package:jobs/screens/drawer_screen.dart';
 import 'package:jobs/screens/precise_pickup_location.dart';
@@ -60,7 +63,7 @@ class _MainScreenState extends State<MainScreen> {
 
   bool openNavigationDrawer = true;
 
-  bool activeNearbyDriverKeysLoaded = false;
+  bool activeNearbyWorkersKeysLoaded = false;
 
   BitmapDescriptor? activeNearbyIcon;
 
@@ -82,8 +85,89 @@ class _MainScreenState extends State<MainScreen> {
     userName = userModelCurrentInfo!.name!;
     userEmail = userModelCurrentInfo!.email!;
 
-    //initilizeGeoFireListener();
+    initilizeGeoFireListener();
     //AssistandMethods.readTripsKeyForOnineUser(context);
+  }
+
+  initilizeGeoFireListener() {
+    Geofire.initialize("activeWorkers");
+    Geofire.queryAtLocation(
+            userCurrentPosition!.latitude, userCurrentPosition!.longitude, 10)!
+        .listen((map) {
+      print(map);
+      if (map != null) {
+        var callBack = map["callBack"];
+
+        switch (callBack) {
+          case Geofire.onKeyEntered:
+            ActiveNearbyAvailableWorkers activeNearbyAvailableWorkers =
+                ActiveNearbyAvailableWorkers();
+            activeNearbyAvailableWorkers.locationLatitude = map["latitude"];
+            activeNearbyAvailableWorkers.locationLongitude = map["longitude"];
+            activeNearbyAvailableWorkers.workerId = map["key"];
+            GeoFireAssistant.activeNearbyAvailableWorkersList
+                .add(activeNearbyAvailableWorkers);
+            if (activeNearbyWorkersKeysLoaded == true) {
+              displayActiveDriversOnUsersMap();
+            }
+            break;
+          case Geofire.onKeyExited:
+            GeoFireAssistant.deleteOfflineWorkersFromList(map["key"]);
+            displayActiveDriversOnUsersMap();
+            break;
+          case Geofire.onKeyMoved:
+            ActiveNearbyAvailableWorkers activeNearbyAvailableWorkers =
+                ActiveNearbyAvailableWorkers();
+            activeNearbyAvailableWorkers.locationLatitude = map["latitude"];
+            activeNearbyAvailableWorkers.locationLongitude = map["longitude"];
+            activeNearbyAvailableWorkers.workerId = map["key"];
+            GeoFireAssistant.updateActiveNearbyAvailableDriverLocation(
+                activeNearbyAvailableWorkers);
+            displayActiveDriversOnUsersMap();
+            break;
+          case Geofire.onGeoQueryReady:
+            activeNearbyWorkersKeysLoaded = true;
+            displayActiveDriversOnUsersMap();
+            break;
+        }
+      }
+      setState(() {});
+    });
+  }
+
+  displayActiveDriversOnUsersMap(){
+    setState(() {
+      markersSet.clear();
+      circlesSet.clear();
+
+      Set<Marker> workersMarkerSet= Set<Marker>();
+
+      for(ActiveNearbyAvailableWorkers eachWorker in GeoFireAssistant.activeNearbyAvailableWorkersList){
+        LatLng eachWorkerActivePosition= LatLng(eachWorker.locationLatitude!, eachWorker.locationLongitude!);
+
+        Marker marker= Marker(
+          markerId: MarkerId(eachWorker.workerId!),
+          position: eachWorkerActivePosition,
+          icon: activeNearbyIcon!,
+          rotation: 360,
+        );
+
+        workersMarkerSet.add(marker);
+
+        setState(() {
+          markersSet= workersMarkerSet;
+        });
+      }
+    });
+  } 
+
+  createActiveNearbyWorkerIconMarker(){
+    if(activeNearbyIcon==null){
+      ImageConfiguration imageConfiguration= createLocalImageConfiguration(context,size: Size(2,2));
+      BitmapDescriptor.fromAssetImage(imageConfiguration, "images/worker.png").then((value){
+        activeNearbyIcon= value;
+      });
+    }
   }
 
   Future<void> drawPolyLineFromOriginToDestination(bool darkTheme) async {
@@ -247,6 +331,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     bool darkTheme =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
+    //bool darkTheme = true;
+    createActiveNearbyWorkerIconMarker();
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -257,8 +343,7 @@ class _MainScreenState extends State<MainScreen> {
         body: Stack(
           children: [
             GoogleMap(
-              padding:
-                  EdgeInsets.only(top: 40, bottom: (bottomPaddingofMap)),
+              padding: EdgeInsets.only(top: 40, bottom: (bottomPaddingofMap)),
               mapType: MapType.normal,
               myLocationEnabled: true,
               zoomGesturesEnabled: true,
@@ -271,7 +356,7 @@ class _MainScreenState extends State<MainScreen> {
                 _controllerGoogleMap.complete(controller);
                 newGoogleMapController = controller;
                 setState(() {
-                  bottomPaddingofMap=200;
+                  bottomPaddingofMap = 200;
                 });
                 locateUserPosition();
               },
@@ -301,10 +386,10 @@ class _MainScreenState extends State<MainScreen> {
 
             Positioned(
               top: 50,
-              left:20,
+              left: 20,
               child: Container(
                 child: GestureDetector(
-                  onTap: (){
+                  onTap: () {
                     _scaffoldState.currentState!.openDrawer();
                   },
                   child: CircleAvatar(
@@ -317,9 +402,6 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
-
-
-
             Positioned(
               bottom: 0,
               left: 0,
@@ -473,7 +555,10 @@ class _MainScreenState extends State<MainScreen> {
                           children: [
                             ElevatedButton(
                               onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (c)=>PrecisePickUpScreen()));
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (c) => PrecisePickUpScreen()));
                               },
                               child: Text(
                                 "Change Pick Up",
@@ -488,27 +573,24 @@ class _MainScreenState extends State<MainScreen> {
                                     fontSize: 13,
                                   )),
                             ),
-                            SizedBox(width: 10,),
+                            SizedBox(
+                              width: 10,
+                            ),
                             ElevatedButton(
-                              onPressed: (){
-
-                              },
+                              onPressed: () {},
                               child: Text(
                                 "Request a ride",
                                 style: TextStyle(
                                   color: Colors.white,
-
                                 ),
-
                               ),
                               style: ElevatedButton.styleFrom(
-                                primary: Colors.blue,
-                                textStyle: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                )
-                              ),
-                              )
+                                  primary: Colors.blue,
+                                  textStyle: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  )),
+                            )
                           ],
                         )
                       ]),
