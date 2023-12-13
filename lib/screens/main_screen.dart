@@ -1,7 +1,9 @@
 import 'dart:async';
 //import 'dart:html';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geocoder2/geocoder2.dart';
 import 'package:http/http.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +14,12 @@ import 'package:jobs/global/global.dart';
 import 'package:jobs/global/map_key.dart';
 import 'package:jobs/infoHandler/app_info.dart';
 import 'package:jobs/models/active_nearby_available_workers.dart';
+import 'package:jobs/models/direction_details_info.dart';
 import 'package:jobs/models/directions.dart';
 import 'package:jobs/screens/drawer_screen.dart';
 import 'package:jobs/screens/precise_pickup_location.dart';
 import 'package:jobs/screens/search_places_screen.dart';
+import 'package:jobs/splash_screen/splash_screen.dart';
 import 'package:jobs/widgets/progress_dialog.dart';
 import 'package:location/location.dart' as loc;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -44,8 +48,10 @@ class _MainScreenState extends State<MainScreen> {
   GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
 
   double searchLocationContainerHeight = 220;
-  double waitingResponsefromDriverContainerHeight = 0;
-  double assignedDriverInfoContainerHeight = 0;
+  double waitingResponsefromWorkerContainerHeight = 0;
+  double assignedWorkerInfoContainerHeight = 0;
+  double suggestedRidesContainerHeight = 0;
+  double searchingForWorkerContainerHeight=0;
 
   Position? userCurrentPosition;
 
@@ -66,6 +72,20 @@ class _MainScreenState extends State<MainScreen> {
   bool activeNearbyWorkersKeysLoaded = false;
 
   BitmapDescriptor? activeNearbyIcon;
+
+  DatabaseReference? referenceRideRequest;
+
+  String selectedVehicleType = "";
+
+  String workerRequestStatus="Worker is coming";
+
+  StreamSubscription<DatabaseEvent>? tripRidesRequestInfoStreamSubscription;
+
+  List <ActiveNearbyAvailableWorkers> onlineNearbyAvailableWorkersList=[];
+
+  String userRideRequestStatus= "";
+
+  bool requestPositionInfo= true;
 
   locateUserPosition() async {
     Position cPosition = await Geolocator.getCurrentPosition(
@@ -135,17 +155,19 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  displayActiveDriversOnUsersMap(){
+  displayActiveDriversOnUsersMap() {
     setState(() {
       markersSet.clear();
       circlesSet.clear();
 
-      Set<Marker> workersMarkerSet= Set<Marker>();
+      Set<Marker> workersMarkerSet = Set<Marker>();
 
-      for(ActiveNearbyAvailableWorkers eachWorker in GeoFireAssistant.activeNearbyAvailableWorkersList){
-        LatLng eachWorkerActivePosition= LatLng(eachWorker.locationLatitude!, eachWorker.locationLongitude!);
+      for (ActiveNearbyAvailableWorkers eachWorker
+          in GeoFireAssistant.activeNearbyAvailableWorkersList) {
+        LatLng eachWorkerActivePosition =
+            LatLng(eachWorker.locationLatitude!, eachWorker.locationLongitude!);
 
-        Marker marker= Marker(
+        Marker marker = Marker(
           markerId: MarkerId(eachWorker.workerId!),
           position: eachWorkerActivePosition,
           icon: activeNearbyIcon!,
@@ -155,17 +177,19 @@ class _MainScreenState extends State<MainScreen> {
         workersMarkerSet.add(marker);
 
         setState(() {
-          markersSet= workersMarkerSet;
+          markersSet = workersMarkerSet;
         });
       }
     });
-  } 
+  }
 
-  createActiveNearbyWorkerIconMarker(){
-    if(activeNearbyIcon==null){
-      ImageConfiguration imageConfiguration= createLocalImageConfiguration(context,size: Size(2,2));
-      BitmapDescriptor.fromAssetImage(imageConfiguration, "images/worker.png").then((value){
-        activeNearbyIcon= value;
+  createActiveNearbyWorkerIconMarker() {
+    if (activeNearbyIcon == null) {
+      ImageConfiguration imageConfiguration =
+          createLocalImageConfiguration(context, size: Size(2, 2));
+      BitmapDescriptor.fromAssetImage(imageConfiguration, "images/worker.png")
+          .then((value) {
+        activeNearbyIcon = value;
       });
     }
   }
@@ -291,6 +315,19 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  showSearchingForWorkersContainer(){
+    setState(() {
+      searchingForWorkerContainerHeight=200;
+    });
+  }
+
+  showSuggestedRidesContainer() {
+    setState(() {
+      suggestedRidesContainerHeight = 400;
+      bottomPaddingofMap = 400;
+    });
+  }
+
   /*getAddressFromLatLng() async {
     try {
       GeoData data = await Geocoder2.getDataFromCoordinates(
@@ -317,6 +354,228 @@ class _MainScreenState extends State<MainScreen> {
     _locationPermission = await Geolocator.requestPermission();
     if (_locationPermission == LocationPermission.denied) {
       _locationPermission = await Geolocator.requestPermission();
+    }
+  }
+
+  saveRequestInformation(String selectedVehicleType){
+    referenceRideRequest= FirebaseDatabase.instance.ref().child("All rides Requests").push();
+
+    var originLocation= Provider.of<AppInfo>(context,listen: false).userPickUpLocation;
+    var destinationLocation= Provider.of<AppInfo>(context,listen: false).userDropOffLocation;
+
+    Map originLocationMap={
+      "latitude": originLocation!.locationLatitude.toString(),
+      "longitude": originLocation.locationLongitude.toString(),
+    };
+
+    Map destinationLocationMap={
+      "latitude": destinationLocation!.locationLatitude.toString(),
+      "longitude": destinationLocation.locationLongitude.toString(),
+    };
+
+    Map userInformationMap={
+      "origin": originLocationMap,
+      "destination":destinationLocationMap,
+      "time": DateTime.now().toString(),
+      "userName": userModelCurrentInfo!.name,
+      "userPhone": userModelCurrentInfo!.phone,
+      "originAddress":originLocation.locationName,
+      "destinationAddress": destinationLocation.locationName,
+      "workerId": "waiting",
+    };
+    referenceRideRequest!.set(userInformationMap);
+
+    tripRidesRequestInfoStreamSubscription= referenceRideRequest!.onValue.listen((eventSnap) async{
+      if(eventSnap.snapshot.value==null){
+        return;
+      }
+      if((eventSnap.snapshot.value as Map)["car_details"]!= null){
+        setState(() {
+          workerCarDetails= (eventSnap.snapshot.value as Map)["car_details"].toString();
+        });
+      }
+
+      if((eventSnap.snapshot.value as Map)["workerPhone"]!= null){
+        setState(() {
+          workerCarDetails= (eventSnap.snapshot.value as Map)["workerPhone"].toString();
+        });
+      }
+
+      if((eventSnap.snapshot.value as Map)["workerName"]!= null){
+        setState(() {
+          workerCarDetails= (eventSnap.snapshot.value as Map)["workerName"].toString();
+        });
+      }
+
+      if((eventSnap.snapshot.value as Map)["status"]!= null){
+        setState(() {
+          userRideRequestStatus= (eventSnap.snapshot.value as Map)["status"].toString();
+        });
+      }
+
+      if((eventSnap.snapshot.value as Map)["workerLocation"]!= null){
+        double workerCurrentPositionLat= double.parse((eventSnap.snapshot.value as Map)["workerLocation"]["latitude"].toString());
+        double workerCurrentPositionLng= double.parse((eventSnap.snapshot.value as Map)["workerLocation"]["longitude"].toString());
+
+        LatLng workerCurrentPositionLatLng= LatLng(workerCurrentPositionLat, workerCurrentPositionLng);
+
+        if(userRideRequestStatus=="accepted"){
+          updateArrivalTimeToUserPicUpLocation(workerCurrentPositionLatLng);
+        }
+
+        if(userRideRequestStatus=="arrived"){
+          setState(() {
+            workerRequestStatus="Worker has arrived";
+          });
+        }
+
+        if(userRideRequestStatus== "ontrip"){
+          updateReachingTimeToUserDropOffLocation(workerCurrentPositionLatLng);
+        }
+
+        if(userRideRequestStatus=="ended"){
+          if((eventSnap.snapshot.value as Map)["fareAmount"] != null){
+            double fareAmount = double.parse((eventSnap.snapshot.value as Map)["fareAmount"].toString());
+
+            var response = await showDialog(
+              context: context, 
+              builder: (Builder context)=> PayFareAmountDialog(
+                fareAmount:fareAmount,
+              )
+            );
+
+            if(response=="Cash Paid"){
+              if((eventSnap.snapshot.value as Map)["workerId"] != null){
+                String assignedWorkerId= (eventSnap.snapshot.value as Map)["workerId"].toString();
+                //Navigator.push(context, MaterialPageRoute(builder: (c)=> RateWorkerScreen()));
+
+                referenceRideRequest!.onDisconnect();
+                tripRidesRequestInfoStreamSubscription!.cancel();
+              }
+            }
+          }
+        }
+      }
+     });
+
+     onlineNearbyAvailableWorkersList= GeoFireAssistant.activeNearbyAvailableWorkersList;
+     searchNearstOnlineWorkers(selectedVehicleType);
+  }
+
+  searchNearstOnlineWorkers(String selectedVehicleType)async{
+    if(onlineNearbyAvailableWorkersList.length==0){
+      referenceRideRequest!.remove();
+      setState(() {
+        polylineSet.clear();
+        markersSet.clear();
+        circlesSet.clear();
+        pLineCoordidatedList.clear();
+      });
+
+      Fluttertoast.showToast(msg: "No online nearest Worker available");
+      Fluttertoast.showToast(msg: "Search Again. \n Restarting App");
+
+      Future.delayed(Duration(milliseconds: 4000),(){
+        referenceRideRequest!.remove();
+        Navigator.push(context, MaterialPageRoute(builder: (c)=> SplashScreen()));
+      });
+
+      return;
+    }
+
+    await retrieveOnlineWorkersInformation(onlineNearbyAvailableWorkersList);
+
+    print("Worker List: "+ workersList.toString());
+
+    for (var i = 0; i < workersList.length; i++) {
+      if(workersList[i]["car_details"]["type"]== selectedVehicleType){
+        AssistandMethods.sendNotificationToWorkerNow(workersList[i]["token"], referenceRideRequest!.key!,context)
+      }
+      
+    }
+    Fluttertoast.showToast(msg: "Notification Sent Succesfully");
+    showSearchingForWorkersContainer();
+
+    await  FirebaseDatabase.instance.ref().child("All Ride Request").child(referenceRideRequest!.key!).child("workerId").onValue.listen((eventRideRequestSnapshot) {
+      print ("EvenSnapshot:${eventRideRequestSnapshot.snapshot.value}");
+      if(eventRideRequestSnapshot.snapshot.value!=null){
+        if(eventRideRequestSnapshot.snapshot.value!="waiting"){
+          showUIForAssignedWorkerInfo();
+        }
+      }
+    });
+  }
+
+  
+
+  updateArrivalTimeToUserPicUpLocation(workerCurrentPositionLatLng) async{
+    if(requestPositionInfo==true){
+      requestPositionInfo= false;
+      LatLng userPickUpLocation = LatLng(userCurrentPosition!.latitude, userCurrentPosition!.longitude);
+      var directionDetailsInfo= await AssistandMethods.obtainOriginToDestinationDirectionDetails(workerCurrentPositionLatLng, userPickUpLocation);
+
+      if(directionDetailsInfo==null){
+        return;
+      }
+
+      setState(() {
+        workerRequestStatus= "Worker is coming: "+ directionDetailsInfo.duration_text.toString();
+
+      });
+
+      requestPositionInfo= true;
+    }
+
+    
+  }
+
+  updateReachingTimeToUserDropOffLocation(workerCurrentPositionLatLng) async {
+    if(requestPositionInfo==true){
+      requestPositionInfo= false;
+       var dropOffLocation = Provider.of<AppInfo>(context,listen: false).userDropOffLocation;
+
+       LatLng userDestinationPosition= LatLng(
+        dropOffLocation!.locationLatitude!, 
+        dropOffLocation.locationLongitude!,
+        );
+
+        var directionDetailsInfo= await AssistandMethods.obtainOriginToDestinationDirectionDetails(
+          workerCurrentPositionLatLng, 
+          userDestinationPosition
+          );
+
+        if(directionDetailsInfo== null){
+          return;
+        }
+        setState(() {
+          workerRequestStatus= "Going towards destination: "+ directionDetailsInfo.duration_text.toString();
+        });
+
+        requestPositionInfo=true;
+    }
+  }
+
+  showUIForAssignedWorkerInfo(){
+    setState(() {
+      waitingResponsefromWorkerContainerHeight=0;
+      searchLocationContainerHeight=0;
+      assignedWorkerInfoContainerHeight=200;
+      suggestedRidesContainerHeight=0;
+      bottomPaddingofMap=200;
+    });
+  }
+
+  retrieveOnlineWorkersInformation(List onlineNearesWorkersList) async{
+    workersList.clear();
+    DatabaseReference ref= FirebaseDatabase.instance.ref().child("workers");
+
+    for (var i = 0; i < onlineNearesWorkersList.length; i++) {
+      await ref.child(onlineNearesWorkersList[i].workerId.toString()).once().then((dataSnapshot){
+        var workerKeyInfo= dataSnapshot.snapshot.value;
+
+        workersList.add(workerKeyInfo);
+        print("Worker Key Information = "+ workersList.toString());
+      });
     }
   }
 
@@ -407,7 +666,7 @@ class _MainScreenState extends State<MainScreen> {
               left: 0,
               right: 0,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 50, 20, 20),
+                padding: EdgeInsets.fromLTRB(10, 50, 10, 10),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -561,7 +820,7 @@ class _MainScreenState extends State<MainScreen> {
                                         builder: (c) => PrecisePickUpScreen()));
                               },
                               child: Text(
-                                "Change Pick Up",
+                                "Change Pick Up Address",
                                 style: TextStyle(
                                   color: Colors.white,
                                 ),
@@ -577,9 +836,19 @@ class _MainScreenState extends State<MainScreen> {
                               width: 10,
                             ),
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                if (Provider.of<AppInfo>(context, listen: false)
+                                        .userDropOffLocation !=
+                                    null) {
+                                  showSuggestedRidesContainer();
+                                } else {
+                                  Fluttertoast.showToast(
+                                      msg:
+                                          "Please select a destination location");
+                                }
+                              },
                               child: Text(
-                                "Request a ride",
+                                "Show Fare",
                                 style: TextStyle(
                                   color: Colors.white,
                                 ),
@@ -599,6 +868,333 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
+            Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: suggestedRidesContainerHeight,
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(20),
+                        topLeft: Radius.circular(20),
+                      )),
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Icon(
+                                Icons.star,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 15,
+                            ),
+                            Text(
+                                Provider.of<AppInfo>(context)
+                                            .userPickUpLocation !=
+                                        null
+                                    ? (Provider.of<AppInfo>(context)
+                                                .userPickUpLocation!
+                                                .locationName!)
+                                            .substring(0, 24) +
+                                        "..."
+                                    : "Not Getting Address",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18)),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Icon(
+                                Icons.star,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 15,
+                            ),
+                            Text(
+                                Provider.of<AppInfo>(context)
+                                            .userDropOffLocation !=
+                                        null
+                                    ? Provider.of<AppInfo>(context)
+                                        .userDropOffLocation!
+                                        .locationName!
+                                    : "Where to",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18)),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        Text(
+                          "SUGGESTED RIDES",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedVehicleType = "Car";
+                                      });
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: selectedVehicleType == "Car"
+                                            ? Colors.blue
+                                            : Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(25.0),
+                                        child: Column(
+                                          children: [
+                                            Image.asset("images/worker.png",
+                                                scale: 1),
+                                            SizedBox(
+                                              height: 8,
+                                            ),
+                                            Text(
+                                              "Car",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color:
+                                                    selectedVehicleType == "Car"
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height: 2,
+                                            ),
+                                            Text(
+                                              tripDirectionsDetailsInfo != null
+                                                  ? "₡${((AssistandMethods.calculateFareAmountFromOriginToDestination(tripDirectionsDetailsInfo!) * 2) * 550).toStringAsFixed(1)}"
+                                                  : "null",
+                                              style:
+                                                  TextStyle(color: Colors.grey),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 5,),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedVehicleType = "CNG";
+                                      });
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: selectedVehicleType == "CNG"
+                                            ? Colors.blue
+                                            : Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(25.0),
+                                        child: Column(
+                                          children: [
+                                            Image.asset("images/worker.png",
+                                                scale: 1),
+                                            SizedBox(
+                                              height: 8,
+                                            ),
+                                            Text(
+                                              "CNG",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color:
+                                                    selectedVehicleType == "CNG"
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height: 2,
+                                            ),
+                                            Text(
+                                              tripDirectionsDetailsInfo != null
+                                                  ? "₡${((AssistandMethods.calculateFareAmountFromOriginToDestination(tripDirectionsDetailsInfo!) * 1.5) * 550).toStringAsFixed(1)}"
+                                                  : "null",
+                                              style:
+                                                  TextStyle(color: Colors.grey),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 5,),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedVehicleType = "Bike";
+                                      });
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: selectedVehicleType == "Bike"
+                                            ? Colors.blue
+                                            : Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(25.0),
+                                        child: Column(
+                                          children: [
+                                            Image.asset("images/worker.png",
+                                                scale: 1),
+                                            SizedBox(
+                                              height: 8,
+                                            ),
+                                            Text(
+                                              "Bike",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color:
+                                                    selectedVehicleType == "Bike"
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height: 2,
+                                            ),
+                                            Text(
+                                              tripDirectionsDetailsInfo != null
+                                                  ? "₡${((AssistandMethods.calculateFareAmountFromOriginToDestination(tripDirectionsDetailsInfo!) * 1) * 550).toStringAsFixed(1)}"
+                                                  : "null",
+                                              style:
+                                                  TextStyle(color: Colors.grey),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 5,),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedVehicleType = "Bike";
+                                      });
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: selectedVehicleType == "Bike"
+                                            ? Colors.blue
+                                            : Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(25.0),
+                                        child: Column(
+                                          children: [
+                                            Image.asset("images/worker.png",
+                                                scale: 1),
+                                            SizedBox(
+                                              height: 8,
+                                            ),
+                                            Text(
+                                              "Bike",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color:
+                                                    selectedVehicleType == "Bike"
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height: 2,
+                                            ),
+                                            Text(
+                                              tripDirectionsDetailsInfo != null
+                                                  ? "₡${((AssistandMethods.calculateFareAmountFromOriginToDestination(tripDirectionsDetailsInfo!) * 1) * 550).toStringAsFixed(1)}"
+                                                  : "null",
+                                              style:
+                                                  TextStyle(color: Colors.grey),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  
+                                ])),
+
+                          SizedBox(height: 40,),
+
+                           Expanded(
+                            child: GestureDetector(
+                              
+                              onTap: (){
+                                if(selectedVehicleType!=""){
+                                  saveRequestInformation(selectedVehicleType);
+                                }else{
+                                  Fluttertoast.showToast(msg: "Please select a vehicle from \n Suggested rides.");
+                                }
+                              },
+                              child: Container(
+                                
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Request a Ride",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                           ), 
+                      ],
+                    ),
+                  ),
+                ))
 
             /*Positioned(
                 top: 40,
