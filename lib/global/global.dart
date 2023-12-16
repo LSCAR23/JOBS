@@ -15,3 +15,5 @@ String workerPhone="";
 
 double countRatingStars=0.0;
 String titleStarsRating="";
+
+String cloudMessagingServerToken="key=AAAAFNNkI2I:APA91bE_GKOnMNIQ-7yTJ9eJMJCt1WMRkqA5CxIhV1XS6xgiwUlFvo9a0XLLQb8-GjaWoezGI9uxi3oyPz-StihIt75Bv3mAowQpuQ1qkOyx5Or-C66PjdMgHEZCXFrXB2uxIJN2PqKJ";
