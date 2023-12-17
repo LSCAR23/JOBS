@@ -20,6 +20,7 @@ import 'package:jobs/screens/drawer_screen.dart';
 import 'package:jobs/screens/precise_pickup_location.dart';
 import 'package:jobs/screens/search_places_screen.dart';
 import 'package:jobs/splash_screen/splash_screen.dart';
+import 'package:jobs/widgets/pay_fare_amount_dialog.dart';
 import 'package:jobs/widgets/progress_dialog.dart';
 import 'package:location/location.dart' as loc;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -439,8 +440,8 @@ class _MainScreenState extends State<MainScreen> {
 
             var response = await showDialog(
               context: context, 
-              builder: (Builder context)=> PayFareAmountDialog(
-                fareAmount:fareAmount,
+              builder: (BuildContext context)=> PayFareAmountDialog(
+                fareAmount:fareAmount
               )
             );
 
@@ -489,7 +490,7 @@ class _MainScreenState extends State<MainScreen> {
 
     for (var i = 0; i < workersList.length; i++) {
       if(workersList[i]["car_details"]["type"]== selectedVehicleType){
-        AssistandMethods.sendNotificationToWorkerNow(workersList[i]["token"], referenceRideRequest!.key!,context)
+        AssistandMethods.sendNotificationToWorkerNow(workersList[i]["token"], referenceRideRequest!.key!,context);
       }
       
     }
@@ -1194,7 +1195,82 @@ class _MainScreenState extends State<MainScreen> {
                       ],
                     ),
                   ),
-                ))
+                )),
+
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0 ,
+                  child: Container(
+                    height: searchingForWorkerContainerHeight,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
+                    ),
+
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                      child:Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          LinearProgressIndicator(
+                            color: Colors.blue,
+                          ),
+
+                          SizedBox(height: 10,),
+
+                          Center(
+                            child: Text(
+                              "Search for a worker...",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: 20,),
+
+                          GestureDetector(
+                            onTap: () {
+                              referenceRideRequest!.remove();
+                              setState(() {
+                                searchingForWorkerContainerHeight=0;
+                                suggestedRidesContainerHeight=0;
+                              });
+                            },
+                            child: Container(
+                              height: 50,
+                              width: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(width: 1, color: Colors.grey),
+                              ),
+                              child: Icon(Icons.close, size: 25,),
+                            ),
+                          ),
+
+                          SizedBox(
+                            height: 15,
+                          ),
+
+                          Container(
+                            width: double.infinity,
+                            child: Text(
+                              "Cancel",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.red, fontSize: 12,fontWeight: FontWeight.bold),
+                            ),
+                          )
+                        ],
+                      )
+                      )
+                  ),
+                )
 
             /*Positioned(
                 top: 40,
