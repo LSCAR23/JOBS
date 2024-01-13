@@ -64,7 +64,7 @@ class _PayFareAmountDialogState extends State<PayFareAmountDialog> {
           Padding(
             padding: EdgeInsets.all(10),
             child: Text(
-              "This is the total fare amount. Please pay it to the driver",
+              "This is the total fare amount. Please pay it to the Worker",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,

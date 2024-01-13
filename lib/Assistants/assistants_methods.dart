@@ -74,7 +74,7 @@ class AssistandMethods {
 
     Map <String, String> headerNotification={
       'Content-Type':'application/json',
-      'Authoriztion': cloudMessagingServerToken,
+      'Authorization': cloudMessagingServerToken,
     };
 
     Map bodyNotification={

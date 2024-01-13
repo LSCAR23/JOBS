@@ -129,12 +129,12 @@ class _MainScreenState extends State<MainScreen> {
             GeoFireAssistant.activeNearbyAvailableWorkersList
                 .add(activeNearbyAvailableWorkers);
             if (activeNearbyWorkersKeysLoaded == true) {
-              displayActiveDriversOnUsersMap();
+              displayActiveworkersOnUsersMap();
             }
             break;
           case Geofire.onKeyExited:
             GeoFireAssistant.deleteOfflineWorkersFromList(map["key"]);
-            displayActiveDriversOnUsersMap();
+            displayActiveworkersOnUsersMap();
             break;
           case Geofire.onKeyMoved:
             ActiveNearbyAvailableWorkers activeNearbyAvailableWorkers =
@@ -144,11 +144,11 @@ class _MainScreenState extends State<MainScreen> {
             activeNearbyAvailableWorkers.workerId = map["key"];
             GeoFireAssistant.updateActiveNearbyAvailableDriverLocation(
                 activeNearbyAvailableWorkers);
-            displayActiveDriversOnUsersMap();
+            displayActiveworkersOnUsersMap();
             break;
           case Geofire.onGeoQueryReady:
             activeNearbyWorkersKeysLoaded = true;
-            displayActiveDriversOnUsersMap();
+            displayActiveworkersOnUsersMap();
             break;
         }
       }
@@ -156,7 +156,7 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  displayActiveDriversOnUsersMap() {
+  displayActiveworkersOnUsersMap() {
     setState(() {
       markersSet.clear();
       circlesSet.clear();
@@ -1181,7 +1181,7 @@ class _MainScreenState extends State<MainScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    "Request a Ride",
+                                    "Request a Worker",
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
