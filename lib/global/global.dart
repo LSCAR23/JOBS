@@ -12,6 +12,7 @@ String userDropOffAddress="";
 String workerCarDetails="";
 String workerName="";
 String workerPhone="";
+String workerRatings="";
 
 double countRatingStars=0.0;
 String titleStarsRating="";

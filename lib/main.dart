@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:jobs/infoHandler/app_info.dart';
 import 'package:jobs/screens/login_screen.dart';
 import 'package:jobs/screens/main_screen.dart';
+import 'package:jobs/screens/rate_worker_screen.dart';
 import 'package:jobs/screens/register_screen.dart';
 import 'package:jobs/splash_screen/splash_screen.dart';
 import 'package:jobs/themeProvider/theme_provider.dart';
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
         theme: MyThemes.lightTheme,
         darkTheme: MyThemes.darkTheme,
         debugShowCheckedModeBanner: false,
-        home: const SplashScreen(),
+        home: SplashScreen(),
       ),
     );
   }

@@ -18,6 +18,7 @@ import 'package:jobs/models/direction_details_info.dart';
 import 'package:jobs/models/directions.dart';
 import 'package:jobs/screens/drawer_screen.dart';
 import 'package:jobs/screens/precise_pickup_location.dart';
+import 'package:jobs/screens/rate_worker_screen.dart';
 import 'package:jobs/screens/search_places_screen.dart';
 import 'package:jobs/splash_screen/splash_screen.dart';
 import 'package:jobs/widgets/pay_fare_amount_dialog.dart';
@@ -117,7 +118,7 @@ class _MainScreenState extends State<MainScreen> {
     userEmail = userModelCurrentInfo!.email!;
 
     initilizeGeoFireListener();
-    //AssistandMethods.readTripsKeyForOnineUser(context);
+    AssistandMethods.readTripsKeysForOnlineUser(context);
   }
 
   initilizeGeoFireListener() {
@@ -368,8 +369,8 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  saveRequestInformation(String selectedVehicleType){
-    referenceRideRequest= FirebaseDatabase.instance.ref().child("All rides Requests").push();
+  saveRideRequestInformation(String selectedVehicleType){
+    referenceRideRequest= FirebaseDatabase.instance.ref().child("All Ride Request").push();
 
     var originLocation= Provider.of<AppInfo>(context,listen: false).userPickUpLocation;
     var destinationLocation= Provider.of<AppInfo>(context,listen: false).userDropOffLocation;
@@ -418,6 +419,12 @@ class _MainScreenState extends State<MainScreen> {
         });
       }
 
+      if((eventSnap.snapshot.value as Map)["ratings"]!= null){
+        setState(() {
+          workerRatings= (eventSnap.snapshot.value as Map)["ratings"].toString();
+        });
+      }
+
       if((eventSnap.snapshot.value as Map)["status"]!= null){
         setState(() {
           userRideRequestStatus= (eventSnap.snapshot.value as Map)["status"].toString();
@@ -458,7 +465,9 @@ class _MainScreenState extends State<MainScreen> {
             if(response=="Cash Paid"){
               if((eventSnap.snapshot.value as Map)["workerId"] != null){
                 String assignedWorkerId= (eventSnap.snapshot.value as Map)["workerId"].toString();
-                //Navigator.push(context, MaterialPageRoute(builder: (c)=> RateWorkerScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (c)=> RateWorkerScreen(
+                  assignedWorkerId: assignedWorkerId,
+                )));
 
                 referenceRideRequest!.onDisconnect();
                 tripRidesRequestInfoStreamSubscription!.cancel();
@@ -1177,7 +1186,7 @@ class _MainScreenState extends State<MainScreen> {
                               
                               onTap: (){
                                 if(selectedVehicleType!=""){
-                                  saveRequestInformation(selectedVehicleType);
+                                  saveRideRequestInformation(selectedVehicleType);
                                 }else{
                                   Fluttertoast.showToast(msg: "Please select a vehicle from \n Suggested rides.");
                                 }
@@ -1326,7 +1335,7 @@ class _MainScreenState extends State<MainScreen> {
 
                                         SizedBox(width: 5,),
 
-                                        Text("4.5",
+                                        Text(workerRatings,
                                         style: TextStyle(
                                           color: Colors.grey
                                         ),
