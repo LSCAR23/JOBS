@@ -25,6 +25,16 @@ import 'package:jobs/widgets/progress_dialog.dart';
 import 'package:location/location.dart' as loc;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+Future <void> _makePhoneCall(String url) async{
+  if(await canLaunch(url)){
+    await launch(url);
+  }
+  else{
+    throw "Could not launch $url";
+  }
+}
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -398,13 +408,13 @@ class _MainScreenState extends State<MainScreen> {
 
       if((eventSnap.snapshot.value as Map)["workerPhone"]!= null){
         setState(() {
-          workerCarDetails= (eventSnap.snapshot.value as Map)["workerPhone"].toString();
+          workerPhone= (eventSnap.snapshot.value as Map)["workerPhone"].toString();
         });
       }
 
       if((eventSnap.snapshot.value as Map)["workerName"]!= null){
         setState(() {
-          workerCarDetails= (eventSnap.snapshot.value as Map)["workerName"].toString();
+          workerName= (eventSnap.snapshot.value as Map)["workerName"].toString();
         });
       }
 
@@ -1270,6 +1280,92 @@ class _MainScreenState extends State<MainScreen> {
                       )
                       )
                   ),
+                ),
+
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: assignedWorkerInfoContainerHeight,
+                    decoration: BoxDecoration(
+                      color: darkTheme?Colors.black:Colors.white,
+                      borderRadius: BorderRadius.circular(10)
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Text(workerRequestStatus, style: TextStyle(fontWeight: FontWeight.bold)),
+                          SizedBox(height: 5,),
+                          Divider(thickness: 1,color: darkTheme? Colors.grey:Colors.grey[300],),
+                          SizedBox(height: 5,),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: darkTheme? Colors.amber.shade400: Colors.lightBlue,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(Icons.person,color: darkTheme? Colors.black:Colors.white),
+                                  ),
+
+                                  SizedBox(width: 10,),
+
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(workerName,style: TextStyle(fontWeight: FontWeight.bold),),
+
+                                      Row(children: [
+                                        Icon(Icons.star,color: Colors.orange,),
+
+                                        SizedBox(width: 5,),
+
+                                        Text("4.5",
+                                        style: TextStyle(
+                                          color: Colors.grey
+                                        ),
+                                        )
+                                      ],)
+                                    ],
+                                  )
+                                ],
+                              ),
+
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Image.asset("images/worker.png",scale: 3,),
+
+                                  Text(workerCarDetails,style: TextStyle(fontSize: 12),),
+                                ],
+                              )
+                            ],
+                          ),
+
+                          SizedBox(height: 5,),
+                          Divider(thickness: 1,color: darkTheme?Colors.grey:Colors.grey[300],),
+                          ElevatedButton.icon(
+                            onPressed: (){
+                              _makePhoneCall("tel: ${workerPhone}");
+                            },
+                            style: ElevatedButton.styleFrom(primary: darkTheme?Colors.amber.shade400:Colors.blue),
+
+                            icon: Icon(Icons.phone), 
+                            label: Text("Call Driver"),
+                            ),
+
+
+                        ],
+                      ),
+                      ),
+                  )
                 )
 
             /*Positioned(
