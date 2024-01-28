@@ -132,6 +132,7 @@ class _MainScreenState extends State<MainScreen> {
 
         switch (callBack) {
           case Geofire.onKeyEntered:
+          GeoFireAssistant.activeNearbyAvailableWorkersList.clear();
             ActiveNearbyAvailableWorkers activeNearbyAvailableWorkers =
                 ActiveNearbyAvailableWorkers();
             activeNearbyAvailableWorkers.locationLatitude = map["latitude"];
